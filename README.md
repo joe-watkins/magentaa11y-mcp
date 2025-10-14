@@ -4,15 +4,18 @@ An MCP server that provides LLMs with programmatic access to accessibility accep
 
 ## Quick Start
 
-### Installation (2 steps)
+### Installation
 
-1. **Run the setup script:**
+1. **Install dependencies and build:**
    ```bash
-   ./setup.sh
+   git submodule update --init --recursive
+   npm install
+   npm run build
    ```
-   Choose your IDE (Cursor/VSCode/Claude Desktop) when prompted.
 
-2. **Restart your IDE** (completely quit and reopen)
+2. **Configure your IDE** (see [Configuration](#configuration) below)
+
+3. **Restart your IDE** (completely quit and reopen)
 
 That's it! You'll have 6 new accessibility tools available.
 
@@ -39,63 +42,24 @@ Ask your AI assistant:
 
 ---
 
-## First Time Setup
-
-### Prerequisites
-- Node.js 18.0.0 or higher
-- Git
-
-### Installation Steps
-
-```bash
-# 1. Clone (if you haven't already)
-git clone <your-repo-url>
-cd magentaa11y-mcp
-
-# 2. Initialize the MagentaA11y submodule (IMPORTANT!)
-git submodule update --init --recursive
-
-# 3. Install and build
-npm install
-npm run build
-
-# 4. Configure your IDE
-./setup.sh
-
-# 5. Restart your IDE
-```
-
----
-
 ## Configuration
 
-### Automatic (Recommended)
+After building the project, configure your IDE to use the MCP server. You'll need the absolute path to your `build/index.js` file.
 
-Run the setup script and choose your IDE:
+**Get your absolute path:**
 ```bash
-./setup.sh
+cd magentaa11y-mcp
+echo "$(pwd)/build/index.js"
 ```
 
-The script will:
-- Detect your operating system
-- Ask which IDE you're using (Cursor/VSCode/Claude Desktop)
-- Create the appropriate MCP configuration
-- Show you exactly what was configured
+### Cursor (with Cline)
 
-### Manual Configuration
-
-If the scripts don't work, manually edit your MCP config file:
-
-**Cursor/VSCode:**
+**Config file location:**
 - macOS: `~/Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
 - Windows: `%APPDATA%\Cursor\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
 - Linux: `~/.config/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
 
-**Claude Desktop:**
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-Add this configuration:
+**Configuration:**
 ```json
 {
   "mcpServers": {
@@ -109,7 +73,69 @@ Add this configuration:
 }
 ```
 
-Replace `/ABSOLUTE/PATH/TO/magentaa11y-mcp` with your actual path (run `pwd` in the project directory).
+### VSCode (with MCP Support)
+
+**Config file location:**
+- macOS: `~/Library/Application Support/Code/User/mcp.json`
+- Windows: `%APPDATA%\Code\User\mcp.json`
+- Linux: `~/.config/Code/User/mcp.json`
+
+**Configuration:**
+```json
+{
+  "MagentaA11y MCP": {
+    "type": "stdio",
+    "command": "node",
+    "args": [
+      "/ABSOLUTE/PATH/TO/magentaa11y-mcp/build/index.js"
+    ]
+  }
+}
+```
+
+### VSCode (with Cline Extension)
+
+**Config file location:**
+- macOS: `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
+- Windows: `%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
+- Linux: `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
+
+**Configuration:**
+```json
+{
+  "mcpServers": {
+    "magentaa11y": {
+      "command": "node",
+      "args": [
+        "/ABSOLUTE/PATH/TO/magentaa11y-mcp/build/index.js"
+      ]
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+**Config file location:**
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+**Configuration:**
+```json
+{
+  "mcpServers": {
+    "magentaa11y": {
+      "command": "node",
+      "args": [
+        "/ABSOLUTE/PATH/TO/magentaa11y-mcp/build/index.js"
+      ]
+    }
+  }
+}
+```
+
+**Important:** Replace `/ABSOLUTE/PATH/TO/magentaa11y-mcp` with your actual project path.
 
 ---
 
@@ -175,12 +201,6 @@ git submodule update --init --recursive
 npm run build
 ```
 
-### Permission errors (macOS/Linux)
-
-```bash
-chmod +x setup-cursor.sh setup-vscode.sh setup-claude-desktop.sh
-```
-
 ### Debug with MCP Inspector
 
 ```bash
@@ -216,7 +236,6 @@ magentaa11y-mcp/
 ├── build/                    # Compiled JavaScript
 ├── magentaA11y/             # Git submodule (content)
 ├── docs/prd.md              # Product Requirements
-├── setup.sh                 # Universal setup script
 ├── package.json
 └── tsconfig.json
 ```
