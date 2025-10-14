@@ -24,9 +24,10 @@ echo "Which IDE/client are you using?"
 echo ""
 echo "  1) Cursor"
 echo "  2) VSCode (with Cline extension)"
-echo "  3) Claude Desktop"
+echo "  3) VSCode (with GitHub Copilot)"
+echo "  4) Claude Desktop"
 echo ""
-read -p "Enter your choice (1-3): " choice
+read -p "Enter your choice (1-4): " choice
 echo ""
 
 # Determine OS and set config path based on choice
@@ -48,7 +49,7 @@ case "$choice" in
         fi
         ;;
     2)
-        IDE="VSCode"
+        IDE="VSCode (Cline)"
         if [[ "$OSTYPE" == "darwin"* ]]; then
             CONFIG_DIR="$HOME/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings"
             CONFIG_FILE="$CONFIG_DIR/cline_mcp_settings.json"
@@ -64,6 +65,22 @@ case "$choice" in
         fi
         ;;
     3)
+        IDE="VSCode (GitHub Copilot)"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            CONFIG_DIR="$HOME/Library/Application Support/Code/User"
+            CONFIG_FILE="$CONFIG_DIR/settings.json"
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            CONFIG_DIR="$HOME/.config/Code/User"
+            CONFIG_FILE="$CONFIG_DIR/settings.json"
+        elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+            CONFIG_DIR="$APPDATA/Code/User"
+            CONFIG_FILE="$CONFIG_DIR/settings.json"
+        else
+            echo "❌ Unsupported OS: $OSTYPE"
+            exit 1
+        fi
+        ;;
+    4)
         IDE="Claude Desktop"
         if [[ "$OSTYPE" == "darwin"* ]]; then
             CONFIG_DIR="$HOME/Library/Application Support/Claude"
@@ -80,7 +97,7 @@ case "$choice" in
         fi
         ;;
     *)
-        echo "❌ Invalid choice. Please run the script again and choose 1, 2, or 3."
+        echo "❌ Invalid choice. Please run the script again and choose 1, 2, 3, or 4."
         exit 1
         ;;
 esac
@@ -100,8 +117,59 @@ if [ -f "$CONFIG_FILE" ]; then
     echo ""
 fi
 
-# Create MCP config file
-cat > "$CONFIG_FILE" << EOF
+# Create MCP config file based on IDE choice
+if [ "$choice" = "3" ]; then
+    # GitHub Copilot - merge with existing settings.json
+    if [ -f "$CONFIG_FILE" ]; then
+        # Read existing settings and add MCP configuration
+        echo "📝 Merging MCP configuration with existing VSCode settings..."
+        
+        # Use jq if available, otherwise manual merge
+        if command -v jq &> /dev/null; then
+            TEMP_FILE="${CONFIG_FILE}.tmp"
+            jq --arg path "$PROJECT_PATH/build/index.js" \
+               '.["github.copilot.chat.codeGeneration.instructions"] += [
+                   "Use MagentaA11y accessibility guidelines when building components"
+               ] | 
+               .mcp.servers.magentaa11y = {
+                   "command": "node",
+                   "args": [$path]
+               }' "$CONFIG_FILE" > "$TEMP_FILE"
+            mv "$TEMP_FILE" "$CONFIG_FILE"
+        else
+            echo "⚠️  Note: jq not found. Please manually add the following to your VSCode settings.json:"
+            echo ""
+            echo '  "mcp.servers": {'
+            echo '    "magentaa11y": {'
+            echo '      "command": "node",'
+            echo "      \"args\": [\"$PROJECT_PATH/build/index.js\"]"
+            echo '    }'
+            echo '  }'
+            echo ""
+        fi
+    else
+        # Create new settings.json for GitHub Copilot
+        cat > "$CONFIG_FILE" << EOF
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    "Use MagentaA11y accessibility guidelines when building components"
+  ],
+  "mcp": {
+    "servers": {
+      "magentaa11y": {
+        "command": "node",
+        "args": [
+          "$PROJECT_PATH/build/index.js"
+        ]
+      }
+    }
+  }
+}
+EOF
+    fi
+else
+    # Standard MCP config for Cursor, Cline, or Claude Desktop
+    cat > "$CONFIG_FILE" << EOF
 {
   "mcpServers": {
     "magentaa11y": {
@@ -113,6 +181,7 @@ cat > "$CONFIG_FILE" << EOF
   }
 }
 EOF
+fi
 
 echo "════════════════════════════════════════════════════════════"
 echo "  ✅ Setup Complete!"
@@ -131,14 +200,21 @@ echo "════════════════════════�
 echo "  🔄 Next Steps"
 echo "════════════════════════════════════════════════════════════"
 echo ""
-if [ "$IDE" = "VSCode" ]; then
+if [ "$IDE" = "VSCode (Cline)" ]; then
     echo "1. Make sure the Cline extension is installed in VSCode"
-    echo "2. Restart $IDE completely (quit and reopen)"
+    echo "2. Restart VSCode completely (quit and reopen)"
+    echo "3. Open a chat with Cline"
+elif [ "$IDE" = "VSCode (GitHub Copilot)" ]; then
+    echo "1. Make sure GitHub Copilot is enabled in VSCode"
+    echo "2. Install the MCP extension for VSCode if not already installed"
+    echo "3. Restart VSCode completely (quit and reopen)"
+    echo "4. Open GitHub Copilot Chat"
 else
     echo "1. Restart $IDE completely (quit and reopen)"
+    echo "2. Open a chat with Claude"
 fi
-echo "2. Open a chat with Claude/Cline"
-echo "3. You should see 6 new MagentaA11y tools available:"
+echo ""
+echo "You should see 6 new MagentaA11y tools available:"
 echo "   • list_web_components"
 echo "   • get_web_component"
 echo "   • search_web_criteria"
