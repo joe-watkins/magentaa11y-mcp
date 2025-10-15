@@ -139,6 +139,102 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['query'],
         },
       },
+      // Content Format Tools
+      {
+        name: 'get_component_gherkin',
+        description: 'Get Gherkin-style acceptance criteria for a component. These are detailed Given/When/Then scenarios for testing accessibility.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['web', 'native'],
+              description: 'Platform (web or native)',
+            },
+            component: {
+              type: 'string',
+              description: 'Component name (e.g., "button", "checkbox")',
+            },
+          },
+          required: ['platform', 'component'],
+        },
+      },
+      {
+        name: 'get_component_condensed',
+        description: 'Get condensed acceptance criteria for a component. These are shorter, more focused testing instructions.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['web', 'native'],
+              description: 'Platform (web or native)',
+            },
+            component: {
+              type: 'string',
+              description: 'Component name (e.g., "button", "checkbox")',
+            },
+          },
+          required: ['platform', 'component'],
+        },
+      },
+      {
+        name: 'get_component_developer_notes',
+        description: 'Get developer implementation notes for a component. Includes code examples, WCAG mappings, and technical guidance.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['web', 'native'],
+              description: 'Platform (web or native)',
+            },
+            component: {
+              type: 'string',
+              description: 'Component name (e.g., "button", "checkbox")',
+            },
+          },
+          required: ['platform', 'component'],
+        },
+      },
+      {
+        name: 'get_component_native_notes',
+        description: 'Get platform-specific developer notes for native components (iOS or Android implementation details).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['ios', 'android'],
+              description: 'Native platform (ios or android)',
+            },
+            component: {
+              type: 'string',
+              description: 'Component name (e.g., "button", "switch")',
+            },
+          },
+          required: ['platform', 'component'],
+        },
+      },
+      {
+        name: 'list_component_formats',
+        description: 'List all available content formats for a specific component (e.g., gherkin, condensed, developer notes).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['web', 'native'],
+              description: 'Platform (web or native)',
+            },
+            component: {
+              type: 'string',
+              description: 'Component name (e.g., "button", "checkbox")',
+            },
+          },
+          required: ['platform', 'component'],
+        },
+      },
     ],
   };
 });
@@ -163,6 +259,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleGetNativeComponent(args);
       case 'search_native_criteria':
         return await handleSearchNativeCriteria(args);
+      case 'get_component_gherkin':
+        return await handleGetComponentGherkin(args);
+      case 'get_component_condensed':
+        return await handleGetComponentCondensed(args);
+      case 'get_component_developer_notes':
+        return await handleGetComponentDeveloperNotes(args);
+      case 'get_component_native_notes':
+        return await handleGetComponentNativeNotes(args);
+      case 'list_component_formats':
+        return await handleListComponentFormats(args);
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -330,6 +436,208 @@ async function handleSearchNativeCriteria(args: any) {
 }
 
 /**
+ * Content Format Handlers
+ */
+
+async function handleGetComponentGherkin(args: any) {
+  try {
+    const content = await contentLoader.getComponentContent(args.platform, args.component, 'gherkin');
+    return {
+      content: [
+        {
+          type: 'text',
+          text: content,
+        },
+      ],
+    };
+  } catch (error: any) {
+    const suggestions = contentLoader.getSimilarComponents(args.platform, args.component);
+    const formats = contentLoader.getAvailableFormats(args.platform, args.component);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              error: error.message,
+              component: args.component,
+              suggestions,
+              availableFormats: formats,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+async function handleGetComponentCondensed(args: any) {
+  try {
+    const content = await contentLoader.getComponentContent(args.platform, args.component, 'condensed');
+    return {
+      content: [
+        {
+          type: 'text',
+          text: content,
+        },
+      ],
+    };
+  } catch (error: any) {
+    const suggestions = contentLoader.getSimilarComponents(args.platform, args.component);
+    const formats = contentLoader.getAvailableFormats(args.platform, args.component);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              error: error.message,
+              component: args.component,
+              suggestions,
+              availableFormats: formats,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+async function handleGetComponentDeveloperNotes(args: any) {
+  try {
+    const content = await contentLoader.getComponentContent(args.platform, args.component, 'developerNotes');
+    return {
+      content: [
+        {
+          type: 'text',
+          text: content,
+        },
+      ],
+    };
+  } catch (error: any) {
+    const suggestions = contentLoader.getSimilarComponents(args.platform, args.component);
+    const formats = contentLoader.getAvailableFormats(args.platform, args.component);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              error: error.message,
+              component: args.component,
+              suggestions,
+              availableFormats: formats,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+async function handleGetComponentNativeNotes(args: any) {
+  try {
+    const format = args.platform === 'ios' ? 'iosDeveloperNotes' : 'androidDeveloperNotes';
+    const content = await contentLoader.getComponentContent('native', args.component, format);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: content,
+        },
+      ],
+    };
+  } catch (error: any) {
+    const suggestions = contentLoader.getSimilarComponents('native', args.component);
+    const formats = contentLoader.getAvailableFormats('native', args.component);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              error: error.message,
+              component: args.component,
+              platform: args.platform,
+              suggestions,
+              availableFormats: formats,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+async function handleListComponentFormats(args: any) {
+  try {
+    const formats = contentLoader.getAvailableFormats(args.platform, args.component);
+    const component = await contentLoader.getComponent(args.platform, args.component);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              component: args.component,
+              displayName: component.label,
+              platform: args.platform,
+              availableFormats: formats,
+              formatDescriptions: {
+                gherkin: 'Given/When/Then style acceptance criteria for comprehensive testing',
+                condensed: 'Shortened, focused testing instructions',
+                developerNotes: 'Implementation guidance with code examples and WCAG mappings',
+                androidDeveloperNotes: 'Android-specific implementation details',
+                iosDeveloperNotes: 'iOS-specific implementation details'
+              }
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error: any) {
+    const suggestions = contentLoader.getSimilarComponents(args.platform, args.component);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              error: error.message,
+              component: args.component,
+              suggestions,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+/**
  * Start the server
  */
 async function main() {
@@ -340,7 +648,7 @@ async function main() {
     console.error('Content indexed successfully');
   } catch (error: any) {
     console.error('Failed to initialize content:', error.message);
-    console.error('Make sure to run: git submodule update --init --recursive');
+    console.error('Make sure content.json exists in magentaA11y/src/shared/');
     process.exit(1);
   }
 
@@ -348,7 +656,7 @@ async function main() {
   await server.connect(transport);
   
   console.error('MagentaA11y MCP Server running on stdio');
-  console.error('Available tools: list_web_components, get_web_component, search_web_criteria, list_native_components, get_native_component, search_native_criteria');
+  console.error('Available tools: list_web_components, get_web_component, search_web_criteria, list_native_components, get_native_component, search_native_criteria, get_component_gherkin, get_component_condensed, get_component_developer_notes, get_component_native_notes, list_component_formats');
 }
 
 main().catch((error) => {

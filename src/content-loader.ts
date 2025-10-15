@@ -4,17 +4,69 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import matter from 'gray-matter';
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
 import Fuse from 'fuse.js';
-import type { ComponentMetadata, ComponentContent } from './types.js';
 
-const CONTENT_BASE_PATH = path.join(process.cwd(), 'magentaA11y', 'public', 'content', 'documentation');
+// Use the shared content.json as source of truth
+const CONTENT_JSON_PATH = path.join(process.cwd(), 'magentaA11y', 'src', 'shared', 'content.json');
+
+export interface ContentItem {
+  label: string;
+  name: string;
+  type?: string;
+  generalNotes?: string;
+  gherkin?: string;
+  condensed?: string;
+  criteria?: string;
+  videos?: string;
+  androidDeveloperNotes?: string;
+  iosDeveloperNotes?: string;
+  developerNotes?: string;
+  categoryName?: string;
+  categoryLabel?: string;
+}
+
+export interface ContentCategory {
+  label: string;
+  name: string;
+  children: ContentItem[];
+}
+
+export interface ContentStructure {
+  web: ContentCategory[];
+  native: ContentCategory[];
+  'how-to-test': ContentCategory[];
+}
+
+export interface ComponentMetadata {
+  name: string;
+  displayName: string;
+  category: string;
+  platform: 'web' | 'native';
+  hasGherkin?: boolean;
+  hasCondensed?: boolean;
+  hasDeveloperNotes?: boolean;
+  hasAndroidNotes?: boolean;
+  hasIOSNotes?: boolean;
+}
+
+export interface SearchResult {
+  component: string;
+  displayName: string;
+  category: string;
+  categoryLabel: string;
+  matches: SearchMatch[];
+  relevance: number;
+}
+
+export interface SearchMatch {
+  field: string;
+  snippet: string;
+}
 
 export class ContentLoader {
-  private webComponents: Map<string, ComponentMetadata> = new Map();
-  private nativeComponents: Map<string, ComponentMetadata> = new Map();
+  private content: ContentStructure | null = null;
+  private webSearchIndex: Fuse<ContentItem> | null = null;
+  private nativeSearchIndex: Fuse<ContentItem> | null = null;
   private indexed = false;
 
   /**
@@ -24,66 +76,55 @@ export class ContentLoader {
     if (this.indexed) return;
 
     try {
-      await this.indexPlatform('web', this.webComponents);
-      await this.indexPlatform('native', this.nativeComponents);
+      const contentRaw = await fs.readFile(CONTENT_JSON_PATH, 'utf-8');
+      this.content = JSON.parse(contentRaw) as ContentStructure;
+
+      // Create search indices
+      this.webSearchIndex = this.createSearchIndex('web');
+      this.nativeSearchIndex = this.createSearchIndex('native');
+      
       this.indexed = true;
-      console.error(`Indexed ${this.webComponents.size} web and ${this.nativeComponents.size} native components`);
+      
+      const webCount = this.content.web.reduce((count, category) => count + category.children.length, 0);
+      const nativeCount = this.content.native.reduce((count, category) => count + category.children.length, 0);
+      
+      console.error(`Indexed ${webCount} web and ${nativeCount} native components from content.json`);
     } catch (error) {
-      console.error('Error indexing content:', error);
-      throw new Error('Failed to initialize content. Ensure magentaA11y submodule is initialized.');
+      console.error('Error loading content.json:', error);
+      throw new Error('Failed to initialize content. Ensure content.json exists in magentaA11y/src/shared/');
     }
   }
 
   /**
-   * Index a platform's content
+   * Create search index for a platform
    */
-  private async indexPlatform(platform: 'web' | 'native', targetMap: Map<string, ComponentMetadata>): Promise<void> {
-    const platformPath = path.join(CONTENT_BASE_PATH, platform);
-    
-    try {
-      await fs.access(platformPath);
-    } catch {
-      console.error(`Warning: ${platform} platform directory not found at ${platformPath}`);
-      return;
-    }
+  private createSearchIndex(platform: 'web' | 'native'): Fuse<ContentItem> {
+    if (!this.content) throw new Error('Content not loaded');
 
-    const categories = await fs.readdir(platformPath, { withFileTypes: true });
+    const items: ContentItem[] = [];
+    const categories = this.content[platform];
 
-    for (const categoryEntry of categories) {
-      if (!categoryEntry.isDirectory()) continue;
-      
-      const category = categoryEntry.name;
-      const categoryPath = path.join(platformPath, category);
-
-      try {
-        const files = await fs.readdir(categoryPath);
-        
-        for (const file of files) {
-          if (!file.endsWith('.md')) continue;
-
-          const componentName = file.replace('.md', '');
-          const filePath = path.join(categoryPath, file);
-          const stats = await fs.stat(filePath);
-
-          const metadata: ComponentMetadata = {
-            name: componentName,
-            displayName: this.formatDisplayName(componentName),
-            category,
-            path: path.relative(CONTENT_BASE_PATH, filePath),
-            platform,
-            lastModified: stats.mtime.toISOString(),
-          };
-
-          if (platform === 'native') {
-            metadata.platforms = ['iOS', 'Android'];
-          }
-
-          targetMap.set(componentName, metadata);
-        }
-      } catch (error) {
-        console.error(`Error reading category ${category}:`, error);
+    for (const category of categories) {
+      for (const item of category.children) {
+        items.push({
+          ...item,
+          categoryName: category.name,
+          categoryLabel: category.label,
+        } as ContentItem & { categoryName: string; categoryLabel: string });
       }
     }
+
+    return new Fuse(items, {
+      keys: [
+        { name: 'label', weight: 0.3 },
+        { name: 'name', weight: 0.3 },
+        { name: 'generalNotes', weight: 0.1 },
+        { name: 'gherkin', weight: 0.1 },
+        { name: 'condensed', weight: 0.1 },
+        { name: 'developerNotes', weight: 0.1 }
+      ],
+      threshold: 0.3,
+    });
   }
 
   /**
@@ -100,218 +141,135 @@ export class ContentLoader {
    * List components for a platform
    */
   listComponents(platform: 'web' | 'native', category?: string): ComponentMetadata[] {
-    const componentsMap = platform === 'web' ? this.webComponents : this.nativeComponents;
-    let components = Array.from(componentsMap.values());
+    if (!this.content) throw new Error('Content not loaded');
 
-    if (category) {
-      components = components.filter(c => c.category === category);
+    const categories = this.content[platform];
+    const components: ComponentMetadata[] = [];
+
+    for (const cat of categories) {
+      if (category && cat.name !== category) continue;
+
+      for (const item of cat.children) {
+        components.push({
+          name: item.name,
+          displayName: item.label,
+          category: cat.name,
+          platform,
+          hasGherkin: !!item.gherkin,
+          hasCondensed: !!item.condensed,
+          hasDeveloperNotes: !!item.developerNotes,
+          hasAndroidNotes: !!item.androidDeveloperNotes,
+          hasIOSNotes: !!item.iosDeveloperNotes,
+        });
+      }
     }
 
     return components.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
-   * Get unique categories for a platform
+   * Get categories for a platform
    */
   getCategories(platform: 'web' | 'native'): string[] {
-    const componentsMap = platform === 'web' ? this.webComponents : this.nativeComponents;
-    const categories = new Set<string>();
+    if (!this.content) throw new Error('Content not loaded');
     
-    for (const component of componentsMap.values()) {
-      categories.add(component.category);
-    }
-
-    return Array.from(categories).sort();
+    return this.content[platform].map(cat => cat.name).sort();
   }
 
   /**
-   * Get detailed component content
+   * Get component details
    */
-  async getComponent(platform: 'web' | 'native', componentName: string): Promise<ComponentContent> {
-    const componentsMap = platform === 'web' ? this.webComponents : this.nativeComponents;
-    const metadata = componentsMap.get(componentName);
+  async getComponent(platform: 'web' | 'native', componentName: string): Promise<ContentItem> {
+    if (!this.content) throw new Error('Content not loaded');
 
-    if (!metadata) {
-      throw new Error(`Component '${componentName}' not found`);
-    }
-
-    const filePath = path.join(CONTENT_BASE_PATH, metadata.path);
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const parsed = matter(fileContent);
+    const categories = this.content[platform];
     
-    const sections = this.extractSections(parsed.content);
-    const wcagCriteria = this.extractWCAGCriteria(parsed.content);
-    
-    const result: ComponentContent = {
-      component: metadata.name,
-      displayName: metadata.displayName,
-      category: metadata.category,
-      content: parsed.content,
-      sections,
-      wcagCriteria,
-      lastModified: metadata.lastModified,
-    };
-
-    // Extract platform-specific metadata for native components
-    if (platform === 'native') {
-      result.platforms = this.extractPlatformMetadata(parsed.content);
-    }
-
-    return result;
-  }
-
-  /**
-   * Extract section headings from markdown
-   */
-  private extractSections(content: string): string[] {
-    const sections: string[] = [];
-    const lines = content.split('\n');
-
-    for (const line of lines) {
-      const match = line.match(/^#{1,3}\s+(.+)$/);
-      if (match) {
-        sections.push(match[1].trim());
+    for (const category of categories) {
+      const component = category.children.find(item => item.name === componentName);
+      if (component) {
+        return {
+          ...component,
+          categoryName: category.name,
+          categoryLabel: category.label,
+        };
       }
     }
 
-    return sections;
+    throw new Error(`Component "${componentName}" not found`);
   }
 
   /**
-   * Extract WCAG success criteria references
+   * Get specific content format for a component
    */
-  private extractWCAGCriteria(content: string): string[] {
-    const criteria = new Set<string>();
-    const regex = /(\d+\.\d+\.\d+)/g;
+  async getComponentContent(platform: 'web' | 'native', componentName: string, format: 'gherkin' | 'condensed' | 'developerNotes' | 'androidDeveloperNotes' | 'iosDeveloperNotes'): Promise<string> {
+    const component = await this.getComponent(platform, componentName);
     
-    let match;
-    while ((match = regex.exec(content)) !== null) {
-      criteria.add(match[1]);
+    const content = component[format];
+    if (!content) {
+      throw new Error(`${format} content not available for component "${componentName}"`);
     }
-
-    return Array.from(criteria).sort();
+    
+    return content;
   }
 
-  /**
-   * Extract platform-specific metadata for native components
-   */
-  private extractPlatformMetadata(content: string): ComponentContent['platforms'] {
-    const platforms: ComponentContent['platforms'] = {};
 
-    // Extract iOS-specific information
-    const iosTraits = this.extractPatterns(content, /UIAccessibilityTrait\w+/g);
-    const iosProperties = this.extractPatterns(content, /accessibility(?:Label|Hint|Value|Traits|Frame)/g);
-    
-    if (iosTraits.length > 0 || iosProperties.length > 0) {
-      platforms.iOS = {
-        traits: iosTraits.length > 0 ? iosTraits : undefined,
-        properties: iosProperties.length > 0 ? iosProperties : undefined,
-      };
-    }
-
-    // Extract Android-specific information
-    const androidClasses = this.extractPatterns(content, /(?:Material)?(?:Button|Switch|Checkbox|TextView|EditText)\b/g);
-    const androidProperties = this.extractPatterns(content, /content(?:Description|Info)|stateDescription/g);
-    
-    if (androidClasses.length > 0 || androidProperties.length > 0) {
-      platforms.Android = {
-        classes: androidClasses.length > 0 ? androidClasses : undefined,
-        properties: androidProperties.length > 0 ? androidProperties : undefined,
-      };
-    }
-
-    return platforms;
-  }
-
-  /**
-   * Extract unique patterns from content
-   */
-  private extractPatterns(content: string, regex: RegExp): string[] {
-    const matches = new Set<string>();
-    let match;
-    
-    while ((match = regex.exec(content)) !== null) {
-      matches.add(match[0]);
-    }
-
-    return Array.from(matches);
-  }
 
   /**
    * Search components
    */
-  async search(platform: 'web' | 'native', query: string, maxResults: number = 10): Promise<any> {
-    const components = this.listComponents(platform);
-    const searchData: Array<{ component: ComponentMetadata; content: string }> = [];
+  async search(platform: 'web' | 'native', query: string, maxResults: number = 10): Promise<SearchResult[]> {
+    const searchIndex = platform === 'web' ? this.webSearchIndex : this.nativeSearchIndex;
+    if (!searchIndex) throw new Error('Search index not initialized');
 
-    // Load content for all components
-    for (const component of components) {
-      try {
-        const content = await this.getComponent(platform, component.name);
-        searchData.push({ component, content: content.content });
-      } catch (error) {
-        console.error(`Error loading component ${component.name}:`, error);
+    const results = searchIndex.search(query, { limit: maxResults });
+
+    return results.map(result => {
+      const item = result.item;
+      const matches: SearchMatch[] = [];
+
+      // Extract matches from different fields
+      if (result.matches) {
+        for (const match of result.matches) {
+          if (match.value && match.key) {
+            const snippet = this.extractSnippet(match.value, query);
+            matches.push({
+              field: match.key,
+              snippet,
+            });
+          }
+        }
       }
-    }
 
-    // Configure fuzzy search
-    const fuse = new Fuse(searchData, {
-      keys: ['content', 'component.name', 'component.displayName'],
-      threshold: 0.4,
-      includeScore: true,
-      includeMatches: true,
-    });
-
-    const results = fuse.search(query);
-
-    return {
-      query,
-      results: results.slice(0, maxResults).map(result => ({
-        component: result.item.component.name,
-        category: result.item.component.category,
-        matches: this.extractMatchSnippets(result.item.content, query),
+      return {
+        component: item.name,
+        displayName: item.label,
+        category: item.categoryName || '',
+        categoryLabel: item.categoryLabel || '',
+        matches,
         relevance: 1 - (result.score || 0),
-      })),
-      totalResults: results.length,
-    };
+      };
+    });
   }
 
   /**
-   * Extract match snippets from content
+   * Extract snippet around query match
    */
-  private extractMatchSnippets(content: string, query: string): any[] {
-    const snippets: any[] = [];
-    const lines = content.split('\n');
+  private extractSnippet(text: string, query: string, maxLength: number = 200): string {
     const queryLower = query.toLowerCase();
-    let currentSection = 'Content';
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      
-      // Track current section
-      const headingMatch = line.match(/^#{1,3}\s+(.+)$/);
-      if (headingMatch) {
-        currentSection = headingMatch[1].trim();
-        continue;
-      }
-
-      // Find matches
-      if (line.toLowerCase().includes(queryLower)) {
-        const start = Math.max(0, i - 1);
-        const end = Math.min(lines.length, i + 2);
-        const snippet = lines.slice(start, end).join(' ').substring(0, 200);
-
-        snippets.push({
-          section: currentSection,
-          snippet: snippet + '...',
-          line: i + 1,
-        });
-
-        if (snippets.length >= 3) break; // Limit snippets per component
-      }
-    }
-
-    return snippets;
+    const textLower = text.toLowerCase();
+    const index = textLower.indexOf(queryLower);
+    
+    if (index === -1) return text.substring(0, maxLength);
+    
+    const start = Math.max(0, index - 50);
+    const end = Math.min(text.length, index + query.length + 150);
+    
+    let snippet = text.substring(start, end);
+    
+    if (start > 0) snippet = '...' + snippet;
+    if (end < text.length) snippet = snippet + '...';
+    
+    return snippet;
   }
 
   /**
@@ -327,6 +285,29 @@ export class ContentLoader {
 
     const results = fuse.search(componentName);
     return results.slice(0, limit).map(r => r.item.name);
+  }
+
+  /**
+   * Get all available formats for a component
+   */
+  getAvailableFormats(platform: 'web' | 'native', componentName: string): string[] {
+    try {
+      const components = this.listComponents(platform);
+      const component = components.find(c => c.name === componentName);
+      
+      if (!component) return [];
+      
+      const formats: string[] = [];
+      if (component.hasGherkin) formats.push('gherkin');
+      if (component.hasCondensed) formats.push('condensed');
+      if (component.hasDeveloperNotes) formats.push('developerNotes');
+      if (component.hasAndroidNotes) formats.push('androidDeveloperNotes');
+      if (component.hasIOSNotes) formats.push('iosDeveloperNotes');
+      
+      return formats;
+    } catch {
+      return [];
+    }
   }
 }
 

@@ -2,13 +2,14 @@
 
 An MCP server that provides LLMs with programmatic access to accessibility acceptance criteria from the [MagentaA11y project](https://github.com/tmobile/magentaA11y).
 
+**✨ Now uses content.json as the source of truth!**
+
 ## Quick Start
 
 ### Installation
 
 1. **Install dependencies and build:**
    ```bash
-   git submodule update --init --recursive
    npm install
    npm run build
    ```
@@ -17,28 +18,37 @@ An MCP server that provides LLMs with programmatic access to accessibility accep
 
 3. **Restart your IDE** (completely quit and reopen)
 
-That's it! You'll have 6 new accessibility tools available.
+That's it! You'll have 11 new accessibility tools available.
 
 ### Try It
 
 Ask your AI assistant:
 - *"List all web components"*
-- *"Show me the accessibility criteria for a button"*
-- *"What are the iOS VoiceOver requirements for a switch?"*
+- *"Show me the Gherkin acceptance criteria for a button"*
+- *"Get the condensed testing instructions for a checkbox"*
+- *"What are the developer notes for an alert notification?"*
+- *"Show me iOS implementation notes for a native button"*
 
 ---
 
-## The 6 Tools
+## The 11 Tools
 
-### Web Platform
+### Component Discovery
 - **`list_web_components`** - List all web accessibility components
-- **`get_web_component`** - Get detailed web component criteria  
+- **`list_native_components`** - List all native components (iOS/Android)
 - **`search_web_criteria`** - Search web accessibility content
-
-### Native Platform (iOS/Android)
-- **`list_native_components`** - List all native components
-- **`get_native_component`** - Get detailed native component criteria
 - **`search_native_criteria`** - Search native accessibility content
+
+### Component Details  
+- **`get_web_component`** - Get full web component details
+- **`get_native_component`** - Get full native component details
+
+### Content Formats (NEW!)
+- **`get_component_gherkin`** - Get Given/When/Then testing scenarios
+- **`get_component_condensed`** - Get shortened acceptance criteria  
+- **`get_component_developer_notes`** - Get implementation guidance with code examples
+- **`get_component_native_notes`** - Get iOS or Android specific implementation details
+- **`list_component_formats`** - See what content formats are available for a component
 
 ---
 
