@@ -4,10 +4,15 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import Fuse from 'fuse.js';
 
-// Use the shared content.json as source of truth
-const CONTENT_JSON_PATH = path.join(process.cwd(), 'magentaA11y', 'src', 'shared', 'content.json');
+// Get the directory of this module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Use the copied content.json from data folder - this gets updated during build
+const CONTENT_JSON_PATH = path.join(__dirname, '..', 'data', 'content.json');
 
 export interface ContentItem {
   label: string;

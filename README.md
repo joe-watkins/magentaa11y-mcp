@@ -11,7 +11,7 @@ An MCP server that provides LLMs with programmatic access to accessibility accep
 1. **Install dependencies and build:**
    ```bash
    npm install
-   npm run build
+   npm run build  # Full build: builds MagentaA11y + MCP server + copies content
    ```
 
 2. **Configure your IDE** (see [Configuration](#configuration) below)
@@ -19,6 +19,116 @@ An MCP server that provides LLMs with programmatic access to accessibility accep
 3. **Restart your IDE** (completely quit and reopen)
 
 That's it! You'll have 11 new accessibility tools available.
+
+---
+
+## Build Process
+
+The MCP server uses an automated build system that manages the MagentaA11y submodule and content synchronization.
+
+### Available Build Commands
+
+| Command | Purpose | What It Does |
+|---------|---------|--------------|
+| `npm run build` | **Full Build** (Recommended) | Builds MagentaA11y → Copies content.json → Builds MCP → Resets submodule |
+| `npm run sync` | **Quick Sync** | Just copies content.json from submodule to `/data` |
+| `npm run build:mcp-only` | **MCP Only** | Just compiles TypeScript (for code-only changes) |
+| `npm start` | **Run Server** | Starts the MCP server for testing |
+
+### Full Build Process (`npm run build`)
+
+The full build automatically:
+
+1. **🔍 Checks MagentaA11y submodule** - Initializes if missing
+2. **📦 Installs dependencies** - In MagentaA11y project if needed  
+3. **🔨 Builds MagentaA11y** - Generates fresh content.json (~1MB, 51 web + 42 native components)
+4. **📄 Copies content.json** - From submodule to `/data/content.json`
+5. **🔧 Builds MCP server** - Compiles TypeScript to `/build`
+6. **🧹 Resets submodule** - `git reset --hard` to keep it clean
+7. **✅ Verifies content** - Ensures everything loaded correctly
+
+**Output Example:**
+```
+🚀 Starting MagentaA11y MCP build process...
+📋 Step 1: Checking MagentaA11y submodule... ✅
+📦 Step 2: Installing MagentaA11y dependencies... ✅
+🔨 Step 3: Building MagentaA11y project... ✅
+📄 Step 4: Copying content.json... ✅
+🔧 Step 5: Building MCP server... ✅
+🧹 Step 6: Cleaning up MagentaA11y submodule... ✅
+🔍 Step 7: Verifying content... ✅
+
+✅ Content verified: 51 web + 42 native components
+📊 File size: 1002.4 KB
+🎉 Build process completed successfully!
+```
+
+### Development Workflow
+
+**For Content Changes:**
+```bash
+# 1. Make changes in magentaA11y/ submodule
+# 2. Quick sync the content
+npm run sync
+# 3. Test your changes
+npm start
+```
+
+**For TypeScript Changes:**
+```bash
+# Just rebuild MCP server
+npm run build:mcp-only
+```
+
+**For Production/Release:**
+```bash
+# Full automated build
+npm run build
+```
+
+### File Structure After Build
+
+```
+magentaa11y-mcp/
+├── data/                    # 📄 Generated content (gitignored)
+│   └── content.json         # ✅ 1MB, 93 components total
+├── build/                   # 🔧 Compiled MCP server  
+│   ├── index.js            # ✅ Main MCP server
+│   ├── content-loader.js   # ✅ Content management
+│   └── types.js            # ✅ Type definitions
+├── magentaA11y/             # 🧹 Clean submodule
+└── src/                     # 💻 TypeScript source
+```
+
+### Troubleshooting Build Issues
+
+**"Failed to initialize content" error:**
+```bash
+# Initialize submodule manually
+git submodule update --init --recursive
+npm run build
+```
+
+**Build fails during MagentaA11y compilation:**
+```bash
+# Clean and rebuild
+cd magentaA11y
+npm install
+npm run build
+cd ..
+npm run sync  # Just copy the content
+```
+
+**MCP server won't start:**
+```bash
+# Check if build completed
+ls -la build/index.js
+ls -la data/content.json
+
+# Test server manually
+node build/index.js
+# Should show: "MagentaA11y MCP Server running on stdio"
+```
 
 ### Try It
 
@@ -223,12 +333,64 @@ This opens a web UI for testing and debugging the MCP server.
 
 ## Updating Content
 
-Get the latest MagentaA11y accessibility criteria:
+### Get Latest MagentaA11y Content
 
+**Method 1: Update from remote (Recommended)**
 ```bash
+# Pull latest changes from MagentaA11y repository
 git submodule update --remote --merge
-npm run build
+npm run build  # Full build with latest content
 # Restart your IDE
+```
+
+**Method 2: Work with local changes**
+```bash
+# If you've made changes in the magentaA11y/ folder
+cd magentaA11y
+# Make your changes...
+npm run build  # Build MagentaA11y to generate content.json
+cd ..
+npm run sync   # Copy the updated content.json
+npm run build:mcp-only  # Rebuild just the MCP server
+# Restart your IDE
+```
+
+### Content Update Workflow
+
+1. **Check for updates:**
+   ```bash
+   cd magentaA11y
+   git fetch
+   git log HEAD..origin/main --oneline  # See what's new
+   ```
+
+2. **Update and rebuild:**
+   ```bash
+   cd ..
+   git submodule update --remote
+   npm run build  # Automatically handles everything
+   ```
+
+3. **Verify the update:**
+   ```bash
+   npm start  # Test the server
+   # In another terminal:
+   # Use MCP Inspector or test in your IDE
+   ```
+
+### Content Statistics
+
+After updating, check what you've got:
+```bash
+# The build process shows this automatically, but you can also check:
+node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('data/content.json', 'utf8'));
+const web = data.web.reduce((c, cat) => c + cat.children.length, 0);
+const native = data.native.reduce((c, cat) => c + cat.children.length, 0);
+console.log(\`📊 Content: \${web} web + \${native} native = \${web + native} total components\`);
+console.log(\`📄 File size: \${(fs.statSync('data/content.json').size / 1024).toFixed(1)} KB\`);
+"
 ```
 
 ---
@@ -239,45 +401,173 @@ npm run build
 
 ```
 magentaa11y-mcp/
-├── src/                      # TypeScript source code
-│   ├── index.ts             # Main MCP server
-│   ├── content-loader.ts    # Content indexing & search
-│   └── types.ts             # Type definitions
-├── build/                    # Compiled JavaScript
-├── magentaA11y/             # Git submodule (content)
-├── docs/prd.md              # Product Requirements
-├── package.json
-└── tsconfig.json
+├── 📁 src/                      # TypeScript source code
+│   ├── 🎯 index.ts             # Main MCP server (11 tools)
+│   ├── 📚 content-loader.ts    # Content indexing & search
+│   └── 🏷️  types.ts             # Type definitions
+├── 📁 build/                    # Compiled JavaScript (generated)
+│   ├── ✅ index.js             # Compiled MCP server
+│   ├── ✅ content-loader.js    # Compiled content loader
+│   └── ✅ types.js             # Compiled types
+├── 📁 data/                     # Content storage (generated, gitignored)
+│   └── 📄 content.json         # ~1MB, 93 components
+├── 📁 magentaA11y/             # Git submodule (stays clean)
+│   └── src/shared/content.json # Source content (gets copied to /data)
+├── 🔧 build-all.js             # Full build automation script
+├── ⚡ sync-content.js          # Quick content sync script  
+├── 📖 BUILD_PROCESS.md         # Detailed build documentation
+├── 📋 docs/prd.md              # Product Requirements
+├── 📦 package.json             # Dependencies & scripts
+└── ⚙️  tsconfig.json            # TypeScript configuration
 ```
 
-### Commands
+### All Available Commands
 
+| Command | Speed | Purpose | When to Use |
+|---------|-------|---------|-------------|
+| `npm install` | Medium | Install dependencies | First setup |
+| `npm run build` | Slow (~60s) | **Full automated build** | Production, first build |
+| `npm run build:full` | Slow (~60s) | Same as `npm run build` | Explicit full build |
+| `npm run build:mcp-only` | Fast (~5s) | Just compile TypeScript | Code-only changes |
+| `npm run sync` | Very Fast (~1s) | Copy content.json only | Content iteration |
+| `npm run watch` | - | Auto-rebuild on changes | Development |
+| `npm run dev` | - | Same as watch | Development |
+| `npm start` | Fast | Run MCP server | Testing |
+
+### Development Workflows
+
+**🚀 First Time Setup:**
 ```bash
-npm install      # Install dependencies
-npm run build    # Compile TypeScript
-npm run watch    # Watch mode (auto-rebuild)
-npm start        # Run the server
+git clone <repo>
+cd magentaa11y-mcp
+npm install
+npm run build  # Full build (includes submodule setup)
 ```
+
+**🔧 Working on TypeScript Code:**
+```bash
+# Terminal 1: Watch for changes
+npm run watch
+
+# Terminal 2: Test changes
+npm start
+```
+
+**📄 Working on Content:**
+```bash
+# Make changes in magentaA11y/ submodule
+npm run sync           # Quick copy content
+npm run build:mcp-only # Rebuild TypeScript
+npm start             # Test
+```
+
+**🎯 Production Build:**
+```bash
+npm run build  # Full automated process
+# Restart your IDE
+```
+
+### Build Scripts Deep Dive
+
+The build system consists of two main scripts:
+
+**📜 `build-all.js` - Full Build Automation**
+- ✅ Initializes MagentaA11y submodule if missing
+- ✅ Installs MagentaA11y dependencies  
+- ✅ Builds MagentaA11y React app (generates content.json)
+- ✅ Copies content.json to `/data` folder
+- ✅ Compiles MCP server TypeScript
+- ✅ Resets submodule with `git reset --hard`
+- ✅ Validates final content (reports component counts)
+
+**⚡ `sync-content.js` - Quick Content Sync**
+- ✅ Copies content.json from submodule to `/data`
+- ✅ Validates JSON structure
+- ✅ Reports content statistics
+
+**Why This Architecture?**
+- 🧹 **Clean Submodule**: Submodule stays pristine for upstream updates
+- 📄 **Reliable Content**: `/data` folder has consistent, generated content  
+- ⚡ **Fast Development**: Quick sync during content iteration
+- 🔒 **Automated**: One command does everything for production
 
 ### Technology Stack
 
-- **Language:** TypeScript
-- **Runtime:** Node.js 18+
-- **MCP SDK:** @modelcontextprotocol/sdk
-- **Markdown:** gray-matter, remark, unified
-- **Search:** Fuse.js (fuzzy search)
-- **Content:** Git submodule
+**Core Technologies:**
+- **Language:** TypeScript (compiled to ES modules)
+- **Runtime:** Node.js 18+ 
+- **Protocol:** Model Context Protocol (MCP) 
+- **Architecture:** Stdio-based MCP server
+
+**Key Dependencies:**
+- **MCP SDK:** `@modelcontextprotocol/sdk` - MCP server framework
+- **Search:** `fuse.js` - Fuzzy search with weighted scoring
+- **Content:** Git submodule + JSON data structure
+
+**Content Pipeline:**
+- **Source:** MagentaA11y React app markdown files
+- **Generation:** Custom TypeScript parser (`parseMDFiles.ts`) 
+- **Storage:** Structured JSON (~1MB, 93 components)
+- **Distribution:** Copied to `/data` folder during build
+
+**Development Tools:**
+- **Compiler:** TypeScript with ES module output
+- **Build:** Custom Node.js automation scripts  
+- **Watch Mode:** `tsc --watch` for development
+- **Testing:** Manual MCP Inspector + IDE integration
 
 ---
 
 ## What's Included
 
-- ✅ **100+ Components** - Web and native accessibility criteria
-- ✅ **WCAG Mappings** - Automatic extraction of success criteria
-- ✅ **Smart Search** - Fuzzy search with relevance ranking
-- ✅ **Code Examples** - HTML, CSS, JavaScript, Swift, Kotlin
-- ✅ **Platform-Specific** - iOS (VoiceOver) and Android (TalkBack)
-- ✅ **Easy Updates** - Git submodule for latest content
+- ✅ **93 Components Total** - 51 web + 42 native accessibility criteria
+- ✅ **Multiple Content Formats** - Gherkin, condensed, developer notes, platform-specific
+- ✅ **11 MCP Tools** - Complete discovery, search, and content access
+- ✅ **Smart Search** - Fuse.js fuzzy search with weighted relevance scoring
+- ✅ **Code Examples** - HTML, CSS, JavaScript, Swift, Kotlin implementation examples
+- ✅ **Platform-Specific** - iOS (VoiceOver) and Android (TalkBack) implementation details
+- ✅ **WCAG Integration** - Links to relevant WCAG success criteria
+- ✅ **Automated Updates** - Git submodule + build system for latest content
+- ✅ **Fast Performance** - JSON-based content (~1MB) loaded into memory
+- ✅ **Clean Architecture** - Automated build process keeps submodule pristine
+
+---
+
+## Build System Summary
+
+The MagentaA11y MCP server features a sophisticated build system designed for reliability and developer experience:
+
+### 🎯 **One-Command Setup**
+```bash
+npm install && npm run build
+```
+Handles submodule initialization, dependency installation, content generation, and server compilation automatically.
+
+### 🔄 **Content Synchronization**
+- **Source**: MagentaA11y markdown files (submodule)  
+- **Processing**: TypeScript parser generates structured JSON
+- **Storage**: Copied to `/data/content.json` (1MB, 93 components)
+- **Cleanup**: Submodule reset to pristine state
+
+### ⚡ **Development Speed** 
+- **Full Build**: ~60 seconds (production)
+- **Quick Sync**: ~1 second (development)
+- **TypeScript Only**: ~5 seconds (code changes)
+
+### 🧹 **Clean State Management**
+- Submodule stays clean for upstream updates
+- Generated content isolated in `/data` folder  
+- Automated cleanup with `git reset --hard`
+
+### 📊 **Content Verification**
+Every build reports:
+```
+✅ Content verified: 51 web + 42 native components
+📊 File size: 1002.4 KB  
+📅 Last modified: 2025-10-15T03:56:35.218Z
+```
+
+**See [BUILD_PROCESS.md](./BUILD_PROCESS.md) for detailed technical documentation.**
 
 ---
 

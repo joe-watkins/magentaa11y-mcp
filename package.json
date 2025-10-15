@@ -7,7 +7,10 @@
     "magentaa11y-mcp": "./build/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node build-all.js",
+    "build:mcp-only": "tsc",
+    "build:full": "node build-all.js",
+    "sync": "node sync-content.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "dev": "tsc --watch",
