@@ -27,7 +27,7 @@ Configure your IDE with the absolute path to `build/index.js`:
 }
 ```
 
-### VSCode (MCP Support)
+### VSCode
 **File:** `%APPDATA%\Code\User\mcp.json`
 ```json
 {
