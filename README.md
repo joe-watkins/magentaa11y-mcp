@@ -14,7 +14,7 @@ An MCP server that provides accessibility acceptance criteria from the [MagentaA
 
 Configure your IDE with the absolute path to `build/index.js`:
 
-### Cursor (Cline Extension)
+### Cursor
 **File:** `%APPDATA%\Cursor\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
 ```json
 {
@@ -88,8 +88,7 @@ npm run build
 ---
 
 ## License
-
-MIT License - See LICENSE file
+[Apache-2.0 License](https://opensource.org/licenses/Apache-2.0)
 
 ---
 
@@ -101,5 +100,3 @@ For issues with:
 - **MCP protocol:** Visit https://modelcontextprotocol.io/
 
 ---
-
-**Made with ❤️ for accessible web and native applications**
