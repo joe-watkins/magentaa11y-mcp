@@ -2,6 +2,10 @@
 
 An MCP server that provides accessibility acceptance criteria from the [MagentaA11y project](https://github.com/tmobile/magentaA11y).
 
+## Overview
+
+This MCP server is a lightweight Node.js process that loads accessibility criteria into memory at startup and serves requests via JSON-RPC over stdin/stdout. It uses MagentaA11y as a Git submodule, running a build process that parses markdown files from `public/content/documentation/` into a structured `content.json` file. The ContentLoader class loads this JSON once at initialization, creates Fuse.js search indices, and keeps everything in memory for instant (<5ms) responses. When MCP clients like Claude Desktop need accessibility criteria, they spawn this server as a subprocess and communicate through standard pipes rather than HTTP, providing security through process isolation and eliminating network overhead while serving 11 different tools for querying web and native accessibility guidelines.
+
 ## Installation
 
 1. **Install and build:**
