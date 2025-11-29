@@ -6,6 +6,27 @@ An MCP server that provides accessibility acceptance criteria from the [MagentaA
 
 This MCP server is a lightweight Node.js process that loads accessibility criteria into memory at startup and serves requests via JSON-RPC over stdin/stdout. It uses MagentaA11y as a Git submodule, running a build process that parses markdown files from `public/content/documentation/` into a structured `content.json` file. The ContentLoader class loads this JSON once at initialization, creates Fuse.js search indices, and keeps everything in memory for instant (<5ms) responses. When MCP clients like Claude Desktop need accessibility criteria, they spawn this server as a subprocess and communicate through standard pipes rather than HTTP, providing security through process isolation and eliminating network overhead while serving 11 different tools for querying web and native accessibility guidelines.
 
+## Available Tools
+
+The server provides 11 tools for accessing accessibility criteria:
+
+**Web Accessibility:**
+- `list_web_components` - List all 51 web components with optional category filtering
+- `get_web_component` - Get complete accessibility criteria for a specific web component
+- `search_web_criteria` - Fuzzy search across all web accessibility guidelines
+
+**Native Accessibility:**
+- `list_native_components` - List all 42 native components (iOS/Android) with optional category filtering
+- `get_native_component` - Get complete accessibility criteria for a specific native component
+- `search_native_criteria` - Fuzzy search across all native accessibility guidelines
+
+**Content Formats:**
+- `get_component_gherkin` - Get Given/When/Then style acceptance criteria for comprehensive testing
+- `get_component_condensed` - Get shortened, focused testing instructions
+- `get_component_developer_notes` - Get implementation guidance with code examples and WCAG mappings
+- `get_component_native_notes` - Get platform-specific developer notes (iOS/Android)
+- `list_component_formats` - List all available content formats for a component
+
 ## Installation
 
 1. **Install and build:**
