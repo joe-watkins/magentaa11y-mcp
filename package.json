@@ -1,16 +1,41 @@
 {
-  "name": "test-mcp-hatchery-build",
+  "name": "magentaa11y-mcp",
   "version": "1.0.0",
-  "description": "Just a test to see if it works",
+  "description": "MCP server providing accessibility criteria from MagentaA11y",
   "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "magentaa11y-mcp": "src/index.js"
+  },
+  "files": [
+    "src/",
+    "data/content.json",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "accessibility",
+    "a11y",
+    "wcag",
+    "magentaa11y"
+  ],
+  "author": "Joe Watkins",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joe-watkins/magentaa11y-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joe-watkins/magentaa11y-mcp/issues"
+  },
+  "homepage": "https://github.com/joe-watkins/magentaa11y-mcp#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "serverless-http": "^3.2.0"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node src/index.js",

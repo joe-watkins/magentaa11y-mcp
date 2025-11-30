@@ -2,6 +2,40 @@
 
 MCP server providing accessibility criteria from [MagentaA11y](https://www.magentaa11y.com/). Works locally (stdio) and remotely (Netlify Functions).
 
+## Installation
+
+### Via npx (Recommended)
+
+No installation needed! Just configure your MCP client:
+
+```json
+{
+  "mcpServers": {
+    "magentaa11y": {
+      "command": "npx",
+      "args": ["-y", "magentaa11y-mcp"]
+    }
+  }
+}
+```
+
+### VS Code
+
+Add to your VS Code `settings.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "magentaa11y": {
+        "command": "npx",
+        "args": ["-y", "magentaa11y-mcp"]
+      }
+    }
+  }
+}
+```
+
 ## Example Prompts:
 - Get me the accessibility criteria for the Web Button component in Gherkin format.
 - Get me a list of all the native components.
@@ -23,9 +57,11 @@ MCP server providing accessibility criteria from [MagentaA11y](https://www.magen
 | `get_component_native_notes` | Get iOS or Android specific notes |
 | `list_component_formats` | List available formats for a component |
 
-## Setup
+## Development Setup
 
 ```bash
+git clone https://github.com/joe-watkins/magentaa11y-mcp.git
+cd magentaa11y-mcp
 npm install
 git submodule update --init
 ```
@@ -42,7 +78,20 @@ This pulls the latest from magentaA11y, builds it, and copies the generated `con
 
 ## Usage
 
-### Local (Claude Desktop)
+### Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "magentaa11y": {
+      "command": "npx",
+      "args": ["-y", "magentaa11y-mcp"]
+    }
+  }
+}
+```
+
+### Local Development
 
 ```json
 {
