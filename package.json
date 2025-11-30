@@ -1,44 +1,19 @@
 {
-  "name": "magentaa11y-mcp",
+  "name": "test-mcp-hatchery-build",
   "version": "1.0.0",
-  "description": "MCP server providing accessibility acceptance criteria from the MagentaA11y project",
+  "description": "Just a test to see if it works",
   "type": "module",
-  "bin": {
-    "magentaa11y-mcp": "./build/index.js"
-  },
-  "scripts": {
-    "build": "node build-all.js",
-    "build:mcp-only": "tsc",
-    "build:full": "node build-all.js",
-    "sync": "node sync-content.js",
-    "prepare": "npm run build",
-    "watch": "tsc --watch",
-    "dev": "tsc --watch",
-    "start": "node build/index.js"
-  },
-  "keywords": [
-    "mcp",
-    "accessibility",
-    "a11y",
-    "wcag",
-    "model-context-protocol"
-  ],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.5.0",
-    "gray-matter": "^4.0.3",
-    "remark": "^15.0.1",
-    "remark-parse": "^11.0.0",
-    "unified": "^11.0.4",
-    "fuse.js": "^7.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "typescript": "^5.3.3"
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "serverless-http": "^3.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "update-content": "node scripts/update-content.js"
   }
 }
-

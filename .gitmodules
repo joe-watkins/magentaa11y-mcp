@@ -1,4 +1,3 @@
-[submodule "magentaA11y"]
-	path = magentaA11y
+[submodule "data/magentaA11y"]
+	path = data/magentaA11y
 	url = https://github.com/tmobile/magentaA11y.git
-
