@@ -51,7 +51,7 @@ This pulls the latest from magentaA11y, builds it, and copies the generated `con
   "mcpServers": {
     "magentaa11y": {
       "command": "node",
-      "args": ["C:/path/to/src/index.js"]
+      "args": ["/path/to/src/index.js"]
     }
   }
 }
