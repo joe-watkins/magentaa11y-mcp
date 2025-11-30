@@ -2,6 +2,11 @@
 
 MCP server providing accessibility criteria from [MagentaA11y](https://www.magentaa11y.com/). Works locally (stdio) and remotely (Netlify Functions).
 
+## Example Prompts:
+- Get me the accessibility criteria for the Web Button component in Gherkin format.
+- Get me a list of all the native components.
+- Get me the Tooltip AC for Web - Condensed in markdown format.
+
 ## Tools
 
 | Tool | Description |
@@ -51,6 +56,7 @@ This pulls the latest from magentaA11y, builds it, and copies the generated `con
 ```
 
 ### Remote (Netlify)
+Clone this project, build it, and deploy to Netlify. Then use the following configuration:
 
 ```json
 {
