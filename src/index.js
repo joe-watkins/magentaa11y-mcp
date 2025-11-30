@@ -9,7 +9,7 @@ import { tools } from './tools.js';
  */
 const server = new Server(
   {
-    name: 'test-mcp-hatchery-build',
+    name: 'magentaa11y-mcp',
     version: '1.0.0',
   },
   {
@@ -52,7 +52,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('test-mcp-hatchery-build MCP server running on stdio');
+  console.error('MagentaA11y MCP server running on stdio');
+  console.error('Configure this server in your MCP client (VS Code, Claude Desktop, etc.)');
 }
 
 main().catch((error) => {

@@ -2,40 +2,6 @@
 
 MCP server providing accessibility criteria from [MagentaA11y](https://www.magentaa11y.com/). Works locally (stdio) and remotely (Netlify Functions).
 
-## Installation
-
-### Via npx (Recommended)
-
-No installation needed! Just configure your MCP client:
-
-```json
-{
-  "mcpServers": {
-    "magentaa11y": {
-      "command": "npx",
-      "args": ["-y", "magentaa11y-mcp"]
-    }
-  }
-}
-```
-
-### VS Code
-
-Add to your VS Code `settings.json`:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "magentaa11y": {
-        "command": "npx",
-        "args": ["-y", "magentaa11y-mcp"]
-      }
-    }
-  }
-}
-```
-
 ## Example Prompts:
 - Get me the accessibility criteria for the Web Button component in Gherkin format.
 - Get me a list of all the native components.
@@ -78,19 +44,6 @@ This pulls the latest from magentaA11y, builds it, and copies the generated `con
 
 ## Usage
 
-### Claude Desktop
-
-```json
-{
-  "mcpServers": {
-    "magentaa11y": {
-      "command": "npx",
-      "args": ["-y", "magentaa11y-mcp"]
-    }
-  }
-}
-```
-
 ### Local Development
 
 ```json
@@ -127,7 +80,6 @@ src/
   helpers.js        # Data loading and search utilities
 data/
   content.json      # MagentaA11y accessibility criteria
-  magentaA11y/      # Git submodule (source repo)
 netlify/
   functions/api.js  # Netlify Function (SSE transport)
 scripts/
