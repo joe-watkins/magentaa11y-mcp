@@ -9,24 +9,35 @@
  */
 
 import { execSync } from 'child_process';
-import { copyFileSync, existsSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
-const submoduleDir = join(rootDir, 'data', 'magentaA11y');
+const dataDir = join(rootDir, 'data');
+const submoduleDir = join(dataDir, 'magentaA11y');
 const sourceFile = join(submoduleDir, 'src', 'shared', 'content.json');
-const destFile = join(rootDir, 'data', 'content.json');
+const destFile = join(dataDir, 'content.json');
 
 function run(cmd, cwd = rootDir) {
   console.log(`\n> ${cmd}`);
-  execSync(cmd, { cwd, stdio: 'inherit' });
+  execSync(cmd, { 
+    cwd, 
+    stdio: 'inherit',
+    maxBuffer: 50 * 1024 * 1024 // 50MB buffer
+  });
 }
 
 async function main() {
   console.log('🔄 Updating MagentaA11y content...\n');
+
+  // Ensure data directory exists
+  if (!existsSync(dataDir)) {
+    console.log('📁 Creating data directory...');
+    mkdirSync(dataDir, { recursive: true });
+  }
 
   // Initialize submodule if needed
   if (!existsSync(join(submoduleDir, '.git'))) {
