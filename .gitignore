@@ -8,3 +8,4 @@ dist/
 
 # Ignore magentaa11y data folder (external content)
 /data/magentaA11y/
+/data/content.json
