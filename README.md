@@ -26,10 +26,10 @@ MCP server providing accessibility criteria from [MagentaA11y](https://www.magen
 ## Development Setup
 
 ```bash
-git clone https://github.com/joe-watkins/magentaa11y-mcp.git
+git clone --recurse-submodules https://github.com/joe-watkins/magentaa11y-mcp.git
 cd magentaa11y-mcp
 npm install
-git submodule update --init
+npm run update-content
 ```
 
 ## Updating Content
