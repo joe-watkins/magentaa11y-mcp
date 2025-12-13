@@ -1,0 +1,61 @@
+name: Update Content from Submodule
+
+on:
+  # Run weekly on Sunday at midnight UTC
+  schedule:
+    - cron: '0 0 * * 0'
+  
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-content:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Update submodule to latest
+        run: |
+          cd data/magentaA11y
+          git fetch origin
+          git checkout main
+          git pull origin main
+
+      - name: Rebuild content JSON
+        run: npm run update-content
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet data/content.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/content.json
+          git add data/magentaA11y
+          git commit -m "chore: update content from magentaA11y submodule [skip ci]"
+          git push
