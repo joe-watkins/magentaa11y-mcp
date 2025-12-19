@@ -9,6 +9,8 @@ MCP server providing accessibility criteria from [MagentaA11y](https://www.magen
 
 ## Tools
 
+All tools are read-only, non-destructive, and idempotent. They include OpenAI Apps SDK annotations for enhanced integration.
+
 | Tool | Description |
 |------|-------------|
 | `list_web_components` | List web accessibility components |
@@ -22,6 +24,14 @@ MCP server providing accessibility criteria from [MagentaA11y](https://www.magen
 | `get_component_developer_notes` | Get developer implementation notes |
 | `get_component_native_notes` | Get iOS or Android specific notes |
 | `list_component_formats` | List available formats for a component |
+
+### Tool Annotations
+
+Each tool includes these annotations (OpenAI Apps SDK compatible):
+- `readOnlyHint: true` - Tools only read data, never modify
+- `destructiveHint: false` - No destructive operations
+- `idempotentHint: true` - Same input always produces same output
+- `openWorldHint: false` - Operates on curated MagentaA11y dataset
 
 ## Development Setup
 

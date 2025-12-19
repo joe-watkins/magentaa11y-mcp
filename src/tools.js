@@ -47,6 +47,12 @@ export const tools = [
                 },
             },
         },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
+        },
         handler: async (args) => {
             try {
                 const components = listComponents('web', args.category);
@@ -102,6 +108,12 @@ export const tools = [
                 },
             },
             required: ['component'],
+        },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
         },
         handler: async (args) => {
             try {
@@ -168,6 +180,12 @@ export const tools = [
             },
             required: ['query'],
         },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
+        },
         handler: async (args) => {
             try {
                 const maxResults = args.max_results || 10;
@@ -210,6 +228,12 @@ export const tools = [
                     description: 'Optional category filter (e.g., "controls", "components")',
                 },
             },
+        },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
         },
         handler: async (args) => {
             try {
@@ -268,6 +292,12 @@ export const tools = [
                 },
             },
             required: ['component'],
+        },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
         },
         handler: async (args) => {
             try {
@@ -343,6 +373,12 @@ export const tools = [
             },
             required: ['query'],
         },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
+        },
         handler: async (args) => {
             try {
                 const maxResults = args.max_results || 10;
@@ -392,6 +428,12 @@ export const tools = [
             },
             required: ['platform', 'component'],
         },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
+        },
         handler: async (args) => {
             try {
                 const component = findComponent(args.platform, args.component);
@@ -433,6 +475,12 @@ export const tools = [
             },
             required: ['platform', 'component'],
         },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
+        },
         handler: async (args) => {
             try {
                 const component = findComponent(args.platform, args.component);
@@ -473,6 +521,12 @@ export const tools = [
                 },
             },
             required: ['platform', 'component'],
+        },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
         },
         handler: async (args) => {
             try {
@@ -533,6 +587,12 @@ export const tools = [
             },
             required: ['platform', 'component'],
         },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
+        },
         handler: async (args) => {
             try {
                 // Native components are stored under 'native' platform
@@ -578,6 +638,12 @@ export const tools = [
                 },
             },
             required: ['platform', 'component'],
+        },
+        annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+            openWorldHint: false
         },
         handler: async (args) => {
             try {
