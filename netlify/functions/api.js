@@ -24,7 +24,8 @@ const createServer = () => {
       tools: tools.map(tool => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: tool.inputSchema
+        inputSchema: tool.inputSchema,
+        annotations: tool.annotations
       }))
     };
   });
@@ -64,7 +65,8 @@ async function handleJsonRpcRequest(server, request) {
         tools: tools.map(tool => ({
           name: tool.name,
           description: tool.description,
-          inputSchema: tool.inputSchema
+          inputSchema: tool.inputSchema,
+          annotations: tool.annotations
         }))
       };
     } else if (method === 'tools/call') {
