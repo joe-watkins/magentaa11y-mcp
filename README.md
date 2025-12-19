@@ -25,7 +25,7 @@ All tools are read-only, non-destructive, and idempotent. They include OpenAI Ap
 | `get_component_native_notes` | Get iOS or Android specific notes |
 | `list_component_formats` | List available formats for a component |
 
-### Tool Annotations
+### OpenAI Marketplace Tool Annotations
 
 Each tool includes these annotations (OpenAI Apps SDK compatible):
 - `readOnlyHint: true` - Tools only read data, never modify
